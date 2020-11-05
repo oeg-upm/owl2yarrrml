@@ -1,0 +1,3 @@
+Owlready2==0.24
+RDFlib==5.0.0
+pyyaml==5.3.1
