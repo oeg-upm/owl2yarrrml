@@ -39,14 +39,13 @@ def inityarrrml():
 
 
 def constructMapping(template, onto):
-
     base_iri = onto.base_iri
     for c in list(onto.classes()):
         template['prefixes']['ns'] = base_iri
         triplesmapTemplate = copy.deepcopy(template['mappings']['triplesmap0'])
         triplesmapTemplate['po'][0][1] = c.iri.replace(base_iri, 'ns:')
         del triplesmapTemplate['po'][1]
-        class_name = c.iri.replace(base_iri, '')
+        class_name = c.iri.replace(c.namespace.base_iri, '')
         pos = 1
         for d in list(onto.data_properties()):
             property_name = d.iri.replace('\'', '').replace(base_iri, 'ns:')
@@ -61,7 +60,6 @@ def constructMapping(template, onto):
                         pos = pos + 1
 
         template['mappings']['triplesMap' + class_name.capitalize()] = triplesmapTemplate
-
     for c in list(onto.classes()):
         for triplesmap in dict(template['mappings']):
             if template['mappings'][triplesmap]['po'][0][1] == (c.iri.replace(base_iri, 'ns:')):
@@ -71,7 +69,6 @@ def constructMapping(template, onto):
     del template['mappings']['triplesmap0']
 
 
-
 def findTriplesMap(mapping, base_iri, range):
     ref_triples_map = ""
     for triplesMap in dict.keys(mapping['mappings']):
@@ -79,26 +76,37 @@ def findTriplesMap(mapping, base_iri, range):
             ref_triples_map = triplesMap
     return ref_triples_map
 
-def generate_ref_object_maps(triplesmap, join_template, template, c, onto):
 
+def generate_ref_object_maps(triplesmap, join_template, template, c, onto):
     for o in list(onto.object_properties()):
         for domain in o.domain:
             if domain == c:
                 for range in o.range:
-                    triples_map_parent = findTriplesMap(template, onto.base_iri, range)
-                    join_template['p'] = o.iri.replace(onto.base_iri, 'ns:')
-                    join_template['o'][0]['mapping']=triples_map_parent
-                    template['mappings'][triplesmap]['po'].append(join_template)
+                    if type(range) is not owlready2.entity.ThingClass:
+                        for r in range.Classes:
+                            if r.iri != "http://www.w3.org/2002/07/owl#Thing":
+                                create_join_condition(template, onto, join_template, o, triplesmap, r)
+                    else:
+                        if range.iri != "http://www.w3.org/2002/07/owl#Thing":
+                            create_join_condition(template, onto, join_template, o, triplesmap, range)
 
+
+def create_join_condition(template, onto, join_template, o, triplesmap, range):
+
+    triples_map_parent = findTriplesMap(template, onto.base_iri, range)
+    join = copy.deepcopy(join_template)
+    join['p'] = o.iri.replace(onto.base_iri, 'ns:')
+    join['o'][0]['mapping'] = triples_map_parent
+    template['mappings'][triplesmap]['po'].append(join)
 
 
 def writeOutput(mapping, output):
-    dumped_yaml = str(yaml.dump(mapping, default_flow_style=None, sort_keys=False)).replace("'\"", '"').replace("\"'", ' " ').replace('\'', '')
+    dumped_yaml = str(yaml.dump(mapping, default_flow_style=None, sort_keys=False)).replace("'\"", '"').replace("\"'",' " ').replace('\'', '')
     with open(output, "w") as output_stream:
-       output_stream.write(dumped_yaml)
+        output_stream.write(dumped_yaml)
+
 
 def dataType(type):
-
     if type == float:
         return "xsd:float"
     elif type == int:
@@ -113,8 +121,6 @@ def dataType(type):
         return "xsd:dateTime"
     else:
         return None
-
-
 
 
 if __name__ == "__main__":
