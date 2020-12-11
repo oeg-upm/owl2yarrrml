@@ -84,7 +84,7 @@ def generate_ref_object_maps(triplesmap, join_template, template, c, onto):
                 for range in o.range:
                     if type(range) is not owlready2.entity.ThingClass:
                         for r in range.Classes:
-                            if r.iri != "http://www.w3.org/2002/07/owl#Thing":
+                            if r is owlready2.entity.ThingClass:
                                 create_join_condition(template, onto, join_template, o, triplesmap, r)
                     else:
                         if range.iri != "http://www.w3.org/2002/07/owl#Thing":
