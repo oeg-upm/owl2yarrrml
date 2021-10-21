@@ -1,8 +1,6 @@
 import argparse
-import sys
 import yaml
 import copy
-import datetime
 from owlready2 import *
 
 
@@ -13,7 +11,7 @@ def translate():
     args = parser.parse_args()
     if len(sys.argv) == 5:
         try:
-            ontology = os.path.basename(args.ontology)
+            ontology = str(args.ontology)
             output_path = str(args.output)
 
         except ValueError:
@@ -23,22 +21,22 @@ def translate():
         print("No input the correct arguments, run pip3 translate.py -h to see the help)")
         sys.exit()
 
-    onto_path.append(os.path.abspath(ontology).replace(ontology, ""))
-    onto = get_ontology(ontology).load()
+    #onto_path.append(os.path.abspath(ontology).replace(ontology, ""))
+    onto = get_ontology("file://"+os.path.abspath(ontology)).load()
 
-    template = inityarrrml()
+    template = init_yarrrml()
 
-    constructMapping(template, onto)
+    construct_mapping(template, onto)
 
-    writeOutput(template, output_path)
+    write_output(template, output_path)
 
 
-def inityarrrml():
+def init_yarrrml():
     template = yaml.load(open("template.yaml"), Loader=yaml.FullLoader)
     return template
 
 
-def constructMapping(template, onto):
+def construct_mapping(template, onto):
     base_iri = onto.base_iri
     for c in list(onto.classes()):
         template['prefixes']['ns'] = base_iri
@@ -50,9 +48,9 @@ def constructMapping(template, onto):
         for d in list(onto.data_properties()):
             property_name = d.iri.replace('\'', '').replace(base_iri, 'ns:')
             for domains in d.domain:
-                if domains == c:
+                if domains == c or domains in c.is_a:
                     for ranges in d.range:
-                        datatype = dataType(ranges)
+                        datatype = get_data_type(ranges)
                         if datatype is not None:
                             triplesmapTemplate['po'].insert(pos, [property_name, '$()', datatype.replace('\'', '')])
                         else:
@@ -69,7 +67,7 @@ def constructMapping(template, onto):
     del template['mappings']['triplesmap0']
 
 
-def findTriplesMap(mapping, base_iri, range):
+def find_triplesmap(mapping, base_iri, range):
     ref_triples_map = ""
     for triplesMap in dict.keys(mapping['mappings']):
         if mapping['mappings'][triplesMap]['po'][0][1] == (range.iri.replace(base_iri, 'ns:')):
@@ -92,21 +90,20 @@ def generate_ref_object_maps(triplesmap, join_template, template, c, onto):
 
 
 def create_join_condition(template, onto, join_template, o, triplesmap, range):
-
-    triples_map_parent = findTriplesMap(template, onto.base_iri, range)
+    triples_map_parent = find_triplesmap(template, onto.base_iri, range)
     join = copy.deepcopy(join_template)
     join['p'] = o.iri.replace(onto.base_iri, 'ns:')
     join['o'][0]['mapping'] = triples_map_parent
     template['mappings'][triplesmap]['po'].append(join)
 
 
-def writeOutput(mapping, output):
+def write_output(mapping, output):
     dumped_yaml = str(yaml.dump(mapping, default_flow_style=None, sort_keys=False)).replace("'\"", '"').replace("\"'",' " ').replace('\'', '')
     with open(output, "w") as output_stream:
         output_stream.write(dumped_yaml)
 
 
-def dataType(type):
+def get_data_type(type):
     if type == float:
         return "xsd:float"
     elif type == int:
