@@ -43,6 +43,7 @@ def construct_mapping(template, onto):
     for c in list(onto.classes()):
         template['prefixes'][onto.name] = base_iri
         triplesmapTemplate = copy.deepcopy(template['mappings']['triplesmap0'])
+        triplesmapTemplate['s'] = 'http://example.org/resource/' + c.iri.replace(c.namespace.base_iri, "").lower() + "/$()"
         triplesmapTemplate['po'][0][1] = c.iri.replace(c.namespace.base_iri, prefixes[c.namespace.base_iri] + ":")
         del triplesmapTemplate['po'][1]
         class_name = c.iri.replace(c.namespace.base_iri, '')
