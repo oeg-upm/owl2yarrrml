@@ -4,6 +4,7 @@ import copy
 from owlready2 import *
 
 
+
 def translate():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--ontology", required=True, help="Input ontology file owl path file")
@@ -38,7 +39,7 @@ def init_yarrrml():
 
 def construct_mapping(template, onto):
     base_iri = onto.base_iri
-    prefixes = generate_prefixes(template,onto)
+    generate_prefixes(template,onto)
     for c in list(onto.classes()):
         template['prefixes'][onto.name] = base_iri
         triplesmapTemplate = copy.deepcopy(template['mappings']['triplesmap0'])
@@ -63,15 +64,14 @@ def construct_mapping(template, onto):
         template['mappings']['triplesMap' + class_name.capitalize()] = triplesmapTemplate
     for c in list(onto.classes()):
         for triplesmap in dict(template['mappings']):
-            if template['mappings'][triplesmap]['po'][0][1] == (c.iri.replace(c.namespace.base_iri, prefixes[c.namespace.base_iri] + ":")):
+            if template['mappings'][triplesmap]['po'][0][1] == c.iri.replace(c.namespace.base_iri, prefixes[c.namespace.base_iri] + ":"):
                 join_template = template['mappings']['triplesmap0']['po'][1]
-                generate_ref_object_maps(triplesmap, join_template, template, c, onto,prefixes)
+                generate_ref_object_maps(triplesmap, join_template, template, c, onto, prefixes)
 
     del template['mappings']['triplesmap0']
 
 
 def generate_prefixes(template, onto):
-    prefixes = {}
     for c in list(onto.classes()):
         template['prefixes'][c.namespace.name] = c.namespace.base_iri
         prefixes[c.namespace.base_iri] = c.namespace.name
@@ -81,13 +81,12 @@ def generate_prefixes(template, onto):
     for do in list(onto.object_properties()):
         template['prefixes'][do.namespace.name] = do.namespace.base_iri
         prefixes[do.namespace.base_iri] = do.namespace.name
-    return prefixes
 
 
 def find_triplesmap(mapping, base_iri, range, onto):
     ref_triples_map = ""
     for triplesMap in dict.keys(mapping['mappings']):
-        if mapping['mappings'][triplesMap]['po'][0][1] == (range.iri.replace(base_iri, onto.name)):
+        if mapping['mappings'][triplesMap]['po'][0][1] == range.iri.replace(range.namespace.base_iri,  prefixes[range.namespace.base_iri] + ":"):
             ref_triples_map = triplesMap
     return ref_triples_map
 
@@ -121,9 +120,7 @@ def get_superclasses(c, onto, superclasses):
             get_superclasses(superclass, onto, superclasses)
 
 def write_output(mapping, output):
-    dumped_yaml = str(yaml.dump(mapping, default_flow_style=None, sort_keys=False)).replace("'\"", '"').replace("\"'",
-                                                                                                                ' " ').replace(
-        '\'', '')
+    dumped_yaml = str(yaml.dump(mapping, default_flow_style=None, sort_keys=False)).replace("'\"", '"').replace("\"'", ' " ').replace('\'', '')
     with open(output, "w") as output_stream:
         output_stream.write(dumped_yaml)
 
@@ -146,4 +143,5 @@ def get_data_type(type):
 
 
 if __name__ == "__main__":
+    prefixes = {}
     translate()
