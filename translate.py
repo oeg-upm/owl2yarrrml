@@ -46,10 +46,12 @@ def construct_mapping(template, onto):
         del triplesmapTemplate['po'][1]
         class_name = c.iri.replace(c.namespace.base_iri, '')
         pos = 1
+        superclasses = []
+        get_superclasses(c, onto, superclasses)
         for d in list(onto.data_properties()):
             property_name = d.iri.replace('\'', '').replace(d.namespace.base_iri, prefixes[d.namespace.base_iri] + ":")
             for domains in d.domain:
-                if domains == c or domains in c.is_a:
+                if domains == c or domains in superclasses:
                     for ranges in d.range:
                         datatype = get_data_type(ranges)
                         if datatype is not None:
@@ -90,7 +92,7 @@ def find_triplesmap(mapping, base_iri, range, onto):
     return ref_triples_map
 
 
-def generate_ref_object_maps(triplesmap, join_template, template, c, onto,prefixes):
+def generate_ref_object_maps(triplesmap, join_template, template, c, onto, prefixes):
     for o in list(onto.object_properties()):
         for domain in o.domain:
             if domain == c:
@@ -98,10 +100,10 @@ def generate_ref_object_maps(triplesmap, join_template, template, c, onto,prefix
                     if type(range) is not owlready2.entity.ThingClass:
                         for r in range.Classes:
                             if r is owlready2.entity.ThingClass:
-                                create_join_condition(template, onto, join_template, o, triplesmap, r,prefixes)
+                                create_join_condition(template, onto, join_template, o, triplesmap, r, prefixes)
                     else:
                         if range.iri != "http://www.w3.org/2002/07/owl#Thing":
-                            create_join_condition(template, onto, join_template, o, triplesmap, range,prefixes)
+                            create_join_condition(template, onto, join_template, o, triplesmap, range, prefixes)
 
 
 def create_join_condition(template, onto, join_template, o, triplesmap, range,prefixes):
@@ -111,6 +113,12 @@ def create_join_condition(template, onto, join_template, o, triplesmap, range,pr
     join['o'][0]['mapping'] = triples_map_parent
     template['mappings'][triplesmap]['po'].append(join)
 
+
+def get_superclasses(c, onto, superclasses):
+    for superclass in c.is_a:
+        if superclass in list(onto.classes()):
+            superclasses.append(superclass)
+            get_superclasses(superclass, onto, superclasses)
 
 def write_output(mapping, output):
     dumped_yaml = str(yaml.dump(mapping, default_flow_style=None, sort_keys=False)).replace("'\"", '"').replace("\"'",
