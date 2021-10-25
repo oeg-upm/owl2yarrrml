@@ -73,15 +73,21 @@ def construct_mapping(template, onto):
 
 
 def generate_prefixes(template, onto):
+    for prefix in template["prefixes"]:
+        prefixes[template["prefixes"][prefix]] = prefix
+
     for c in list(onto.classes()):
-        template['prefixes'][c.namespace.name] = c.namespace.base_iri
-        prefixes[c.namespace.base_iri] = c.namespace.name
+        if c.namespace.base_iri not in prefixes:
+            template['prefixes'][c.namespace.name] = c.namespace.base_iri
+            prefixes[c.namespace.base_iri] = c.namespace.name
     for dp in list(onto.data_properties()):
-        template['prefixes'][dp.namespace.name] = dp.namespace.base_iri
-        prefixes[dp.namespace.base_iri] = dp.namespace.name
+        if dp.namespace.base_iri not in prefixes:
+            template['prefixes'][dp.namespace.name] = dp.namespace.base_iri
+            prefixes[dp.namespace.base_iri] = dp.namespace.name
     for do in list(onto.object_properties()):
-        template['prefixes'][do.namespace.name] = do.namespace.base_iri
-        prefixes[do.namespace.base_iri] = do.namespace.name
+        if do.namespace.base_iri not in prefixes:
+            template['prefixes'][do.namespace.name] = do.namespace.base_iri
+            prefixes[do.namespace.base_iri] = do.namespace.name
 
 
 def find_triplesmap(mapping, base_iri, range, onto):
