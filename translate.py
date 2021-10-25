@@ -41,28 +41,29 @@ def construct_mapping(template, onto):
     base_iri = onto.base_iri
     generate_prefixes(template,onto)
     for c in list(onto.classes()):
-        template['prefixes'][onto.name] = base_iri
-        triplesmapTemplate = copy.deepcopy(template['mappings']['triplesmap0'])
-        triplesmapTemplate['s'] = 'http://example.org/resource/' + c.iri.replace(c.namespace.base_iri, "").lower() + "/$()"
-        triplesmapTemplate['po'][0][1] = c.iri.replace(c.namespace.base_iri, prefixes[c.namespace.base_iri] + ":")
-        del triplesmapTemplate['po'][1]
-        class_name = c.iri.replace(c.namespace.base_iri, '')
-        pos = 1
-        superclasses = []
-        get_superclasses(c, onto, superclasses)
-        for d in list(onto.data_properties()):
-            property_name = d.iri.replace('\'', '').replace(d.namespace.base_iri, prefixes[d.namespace.base_iri] + ":")
-            for domains in d.domain:
-                if domains == c or domains in superclasses:
-                    for ranges in d.range:
-                        datatype = get_data_type(ranges)
-                        if datatype is not None:
-                            triplesmapTemplate['po'].insert(pos, [property_name, '$()', datatype.replace('\'', '')])
-                        else:
-                            triplesmapTemplate['po'].insert(pos, [property_name, '$()'])
-                        pos = pos + 1
+        if c.iri != "http://www.w3.org/2004/02/skos/core#Concept" and c.iri != "http://www.w3.org/2004/02/skos/core#ConceptScheme":
+            template['prefixes'][onto.name] = base_iri
+            triplesmapTemplate = copy.deepcopy(template['mappings']['triplesmap0'])
+            triplesmapTemplate['s'] = 'http://example.org/resource/' + c.iri.replace(c.namespace.base_iri, "").lower() + "/$()"
+            triplesmapTemplate['po'][0][1] = c.iri.replace(c.namespace.base_iri, prefixes[c.namespace.base_iri] + ":")
+            del triplesmapTemplate['po'][1]
+            class_name = c.iri.replace(c.namespace.base_iri, '')
+            pos = 1
+            superclasses = []
+            get_superclasses(c, onto, superclasses)
+            for d in list(onto.data_properties()):
+                property_name = d.iri.replace('\'', '').replace(d.namespace.base_iri, prefixes[d.namespace.base_iri] + ":")
+                for domains in d.domain:
+                    if domains == c or domains in superclasses:
+                        for ranges in d.range:
+                            datatype = get_data_type(ranges)
+                            if datatype is not None:
+                                triplesmapTemplate['po'].insert(pos, [property_name, '$()', datatype.replace('\'', '')])
+                            else:
+                                triplesmapTemplate['po'].insert(pos, [property_name, '$()'])
+                            pos = pos + 1
 
-        template['mappings']['triplesMap' + class_name.capitalize()] = triplesmapTemplate
+            template['mappings']['triplesMap' + class_name.capitalize()] = triplesmapTemplate
     for c in list(onto.classes()):
         for triplesmap in dict(template['mappings']):
             if template['mappings'][triplesmap]['po'][0][1] == c.iri.replace(c.namespace.base_iri, prefixes[c.namespace.base_iri] + ":"):
@@ -108,7 +109,9 @@ def generate_ref_object_maps(triplesmap, join_template, template, c, onto, prefi
                             if r is owlready2.entity.ThingClass:
                                 create_join_condition(template, onto, join_template, o, triplesmap, r, prefixes)
                     else:
-                        if range.iri != "http://www.w3.org/2002/07/owl#Thing":
+                        if range.iri == "http://www.w3.org/2004/02/skos/core#Concept":
+                            template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), 'http://example.org/kos/$()~iri'])
+                        elif range.iri != "http://www.w3.org/2002/07/owl#Thing":
                             create_join_condition(template, onto, join_template, o, triplesmap, range, prefixes)
 
 
