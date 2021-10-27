@@ -108,7 +108,11 @@ def generate_ref_object_maps(triplesmap, join_template, template, c, onto, prefi
                         for r in object_range.Classes:
                             if type(r) is owlready2.entity.ThingClass:
                                 if r.iri == "http://www.w3.org/2004/02/skos/core#Concept":
-                                    template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), 'http://example.org/kos/$()~iri'])
+                                    if object_range.Classes[1]:
+                                        print()
+                                        template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), object_range.Classes[1].value.iri+'/$()~iri'])
+                                    else:
+                                        template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), 'http://example.org/kos/$()~iri'])
                                 elif r in list(onto.classes()):
                                     create_join_condition(template, join_template, o, triplesmap, r, prefixes)
                     else:
