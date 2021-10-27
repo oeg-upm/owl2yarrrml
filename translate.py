@@ -91,7 +91,7 @@ def generate_prefixes(template, onto):
             prefixes[do.namespace.base_iri] = do.namespace.name
 
 
-def find_triplesmap(mapping, base_iri, range, onto):
+def find_triplesmap(mapping, range):
     ref_triples_map = ""
     for triplesMap in dict.keys(mapping['mappings']):
         if mapping['mappings'][triplesMap]['po'][0][1] == range.iri.replace(range.namespace.base_iri,  prefixes[range.namespace.base_iri] + ":"):
@@ -103,20 +103,23 @@ def generate_ref_object_maps(triplesmap, join_template, template, c, onto, prefi
     for o in list(onto.object_properties()):
         for domain in o.domain:
             if domain == c:
-                for range in o.range:
-                    if type(range) is not owlready2.entity.ThingClass:
-                        for r in range.Classes:
-                            if r is owlready2.entity.ThingClass:
-                                create_join_condition(template, onto, join_template, o, triplesmap, r, prefixes)
+                for object_range in o.range:
+                    if type(object_range) is not owlready2.entity.ThingClass:
+                        for r in object_range.Classes:
+                            if type(r) is owlready2.entity.ThingClass:
+                                if r.iri == "http://www.w3.org/2004/02/skos/core#Concept":
+                                    template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), 'http://example.org/kos/$()~iri'])
+                                elif r in list(onto.classes()):
+                                    create_join_condition(template, join_template, o, triplesmap, r, prefixes)
                     else:
-                        if range.iri == "http://www.w3.org/2004/02/skos/core#Concept":
+                        if object_range.iri == "http://www.w3.org/2004/02/skos/core#Concept":
                             template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), 'http://example.org/kos/$()~iri'])
-                        elif range.iri != "http://www.w3.org/2002/07/owl#Thing":
-                            create_join_condition(template, onto, join_template, o, triplesmap, range, prefixes)
+                        elif object_range.iri != "http://www.w3.org/2002/07/owl#Thing":
+                            create_join_condition(template, join_template, o, triplesmap, object_range, prefixes)
 
 
-def create_join_condition(template, onto, join_template, o, triplesmap, range,prefixes):
-    triples_map_parent = find_triplesmap(template, onto.base_iri, range, onto)
+def create_join_condition(template, join_template, o, triplesmap, range, prefixes):
+    triples_map_parent = find_triplesmap(template, range)
     join = copy.deepcopy(join_template)
     join['p'] = o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":")
     join['o'][0]['mapping'] = triples_map_parent
