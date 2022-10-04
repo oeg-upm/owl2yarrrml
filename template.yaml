@@ -21,8 +21,8 @@ mappings:
       - p: predicate
         o:
           - mapping: triplesmap2
-            function:
-              condition: equal
+            condition:
+              function: equal
               parameters:
                 - [str1, $()]
                 - [str2, $()]
