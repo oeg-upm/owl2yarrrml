@@ -45,10 +45,13 @@ def construct_mapping(template, onto):
 
             template['mappings']['triplesMap' + class_name.capitalize()] = triplesmapTemplate
     for c in list(onto.classes()):
+        superclasses = [c]
+        get_superclasses(c, onto, superclasses)
         for triplesmap in dict(template['mappings']):
             if template['mappings'][triplesmap]['po'][0][1] == c.iri.replace(c.namespace.base_iri, prefixes[c.namespace.base_iri] + ":"):
                 join_template = template['mappings']['triplesmap0']['po'][1]
-                generate_ref_object_maps(triplesmap, join_template, template, c, onto, prefixes)
+                for s in superclasses:
+                    generate_ref_object_maps(triplesmap, join_template, template, s, onto, prefixes)
 
     del template['mappings']['triplesmap0']
 
