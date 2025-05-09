@@ -1,45 +1,25 @@
-import argparse
 import yaml
 import copy
+from urllib.request import urlopen
 from owlready2 import *
+from .constants import *
 
 
-
-def translate():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--ontology", required=True, help="Input ontology file owl path file")
-    parser.add_argument("-o", "--output", required=True, help="Output file path")
-    args = parser.parse_args()
-    if len(sys.argv) == 5:
-        try:
-            ontology = str(args.ontology)
-            output_path = str(args.output)
-
-        except ValueError:
-            print("No input the correct arguments, run pip3 translate.py -h to see the help")
-            sys.exit()
-    else:
-        print("No input the correct arguments, run pip3 translate.py -h to see the help)")
-        sys.exit()
-
-    # onto_path.append(os.path.abspath(ontology).replace(ontology, ""))
-    onto = get_ontology("file://" + os.path.abspath(ontology)).load()
-
+def translate(ontology):
     template = init_yarrrml()
-
-    construct_mapping(template, onto)
-
-    write_output(template, output_path)
-
+    construct_mapping(template, ontology)
+    return template
 
 def init_yarrrml():
-    template = yaml.load(open("template.yaml"), Loader=yaml.FullLoader)
+    with urlopen(URL_TEMPLATE) as response:
+        content = response.read().decode('utf-8')
+        template = yaml.load(content, Loader=yaml.FullLoader)
     return template
 
 
 def construct_mapping(template, onto):
     base_iri = onto.base_iri
-    generate_prefixes(template,onto)
+    prefixes = generate_prefixes(template,onto)
     for c in list(onto.classes()):
         if c.iri != "http://www.w3.org/2004/02/skos/core#Concept" and c.iri != "http://www.w3.org/2004/02/skos/core#ConceptScheme":
             template['prefixes'][onto.name] = base_iri
@@ -74,6 +54,7 @@ def construct_mapping(template, onto):
 
 
 def generate_prefixes(template, onto):
+    prefixes = {}
     for prefix in template["prefixes"]:
         prefixes[template["prefixes"][prefix]] = prefix
 
@@ -89,7 +70,7 @@ def generate_prefixes(template, onto):
         if do.namespace.base_iri not in prefixes:
             template['prefixes'][do.namespace.name] = do.namespace.base_iri
             prefixes[do.namespace.base_iri] = do.namespace.name
-
+    return prefixes
 
 def find_triplesmap(mapping, range):
     ref_triples_map = ""
@@ -105,16 +86,17 @@ def generate_ref_object_maps(triplesmap, join_template, template, c, onto, prefi
             if domain == c:
                 for object_range in o.range:
                     if type(object_range) is not owlready2.entity.ThingClass:
-                        for r in object_range.Classes:
-                            if type(r) is owlready2.entity.ThingClass:
-                                if r.iri == "http://www.w3.org/2004/02/skos/core#Concept":
-                                    if object_range.Classes[1]:
-                                        print()
-                                        template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), object_range.Classes[1].value.iri+'/$()~iri'])
-                                    else:
-                                        template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), 'http://example.org/kos/$()~iri'])
-                                elif r in list(onto.classes()):
-                                    create_join_condition(template, join_template, o, triplesmap, r, prefixes)
+                        if hasattr(object_range, 'Classes'):
+                            for r in object_range.Classes:
+                                if type(r) is owlready2.entity.ThingClass:
+                                    if r.iri == "http://www.w3.org/2004/02/skos/core#Concept":
+                                        if object_range.Classes[1]:
+                                            print()
+                                            template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), object_range.Classes[1].value.iri+'/$()~iri'])
+                                        else:
+                                            template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), 'http://example.org/kos/$()~iri'])
+                                    elif r in list(onto.classes()):
+                                        create_join_condition(template, join_template, o, triplesmap, r, prefixes)
                     else:
                         if object_range.iri == "http://www.w3.org/2004/02/skos/core#Concept":
                             template['mappings'][triplesmap]['po'].append([o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":"), 'http://example.org/kos/$()~iri'])
@@ -157,8 +139,3 @@ def get_data_type(type):
         return "xsd:dateTime"
     else:
         return None
-
-
-if __name__ == "__main__":
-    prefixes = {}
-    translate()
