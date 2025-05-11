@@ -10,9 +10,10 @@ repository = "https://github.com/citius/owl2yarrrml"
 keywords = ["owl", "yarrrml", "rdf", "mapping", "ontology"]
 
 [tool.poetry.dependencies]
-python = ">3.12"
+python = ">3.8.1,<4.0.0"
 PyYAML = "^6.0"
 owlready2 = "^0.39.0"
+rdflib="^7.1.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0.0"

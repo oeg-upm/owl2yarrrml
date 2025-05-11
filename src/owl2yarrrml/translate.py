@@ -1,20 +1,11 @@
 import yaml
 import copy
-from urllib.request import urlopen
 from owlready2 import *
 from .constants import *
 
 
-def translate(ontology):
-    template = init_yarrrml()
-    construct_mapping(template, ontology)
-    return template
-
 def init_yarrrml():
-    with urlopen(URL_TEMPLATE) as response:
-        content = response.read().decode('utf-8')
-        template = yaml.load(content, Loader=yaml.FullLoader)
-    return template
+    return yaml.load(YAML_TEMPLATE, Loader=yaml.FullLoader)
 
 
 def construct_mapping(template, onto):
@@ -75,7 +66,7 @@ def generate_prefixes(template, onto):
             prefixes[do.namespace.base_iri] = do.namespace.name
     return prefixes
 
-def find_triplesmap(mapping, range):
+def find_triplesmap(mapping, range, prefixes):
     ref_triples_map = ""
     for triplesMap in dict.keys(mapping['mappings']):
         if mapping['mappings'][triplesMap]['po'][0][1] == range.iri.replace(range.namespace.base_iri,  prefixes[range.namespace.base_iri] + ":"):
@@ -108,7 +99,7 @@ def generate_ref_object_maps(triplesmap, join_template, template, c, onto, prefi
 
 
 def create_join_condition(template, join_template, o, triplesmap, range, prefixes):
-    triples_map_parent = find_triplesmap(template, range)
+    triples_map_parent = find_triplesmap(template, range, prefixes)
     join = copy.deepcopy(join_template)
     join['p'] = o.iri.replace(o.namespace.base_iri, prefixes[o.namespace.base_iri] + ":")
     join['o'][0]['mapping'] = triples_map_parent

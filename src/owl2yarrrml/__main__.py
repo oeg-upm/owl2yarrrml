@@ -1,9 +1,37 @@
+from . import translate
 import argparse
 import sys
 import yaml
 import os
-from .translate import translate
-import owlready2
+import tempfile
+from rdflib import Graph
+from owlready2 import World
+
+
+# Inline load_ontology logic
+def load_ontology(path_or_url: str):
+    """
+    Load ontology from a local file path or URL.
+    Supports Turtle by converting via rdflib, otherwise uses Owlready2 directly.
+    """
+    world = World()
+    ext = path_or_url.split('.')[-1].lower()
+
+    if ext in ("ttl", "turtle"):
+        # Parse Turtle to RDF/XML using rdflib
+        g = Graph()
+        g.parse(path_or_url, format="turtle")
+        with tempfile.NamedTemporaryFile(suffix=".owl", delete=False) as tmp:
+            tmp_path = tmp.name
+            g.serialize(destination=tmp_path, format="xml")
+        onto = world.get_ontology(f"file://{tmp_path}").load()
+    else:
+        # Assume RDF/XML, OWL/XML, N-Triples, etc.
+        # Prepend file:// for local paths if needed
+        if not path_or_url.startswith(("http://", "https://", "file://")):
+            path_or_url = "file://" + os.path.abspath(path_or_url)
+        onto = world.get_ontology(path_or_url).load()
+    return onto
 
 def parsing_arguments():
     parser = argparse.ArgumentParser()
@@ -12,7 +40,7 @@ def parsing_arguments():
     args = parser.parse_args()
     if len(sys.argv) == 5:
         try:
-            ontology = owlready2.get_ontology("file://" + os.path.abspath(str(args.ontology))).load()
+            ontology = load_ontology(str(args.ontology))
             output_path = str(args.output)
             return ontology, output_path
         except ValueError:
@@ -30,7 +58,6 @@ def write_results():
         output_stream.write(dumped_yaml)
 
 if __name__ == "__main__":
-    # Allow execution via: python -m owl2yarrrml -i ontology.owl -o mapping.yaml
     ontology, output_path = parsing_arguments()
     mapping = translate(ontology)
     write_results()

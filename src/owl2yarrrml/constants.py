@@ -1,7 +1,36 @@
 
 
 
-URL_TEMPLATE = "https://raw.githubusercontent.com/oeg-upm/owl2yarrrml/refs/heads/main/refs/resources/template.yaml"
+YAML_TEMPLATE = """
+prefixes:
+  xsd: http://www.w3.org/2001/XMLSchema#
+  rr: http://www.w3.org/ns/r2rml#
+  rml: http://semweb.mmlab.be/ns/rml#
+  rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+  ql: http://semweb.mmlab.be/ns/ql#
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
+  foaf: http://xmlns.com/foaf/0.1/
+  schema: http://schema.org/
+  dc: http://purl.org/dc/elements/1.1/
+  skos: http://www.w3.org/2004/02/skos/core#
+
+
+mappings:
+  triplesmap0:
+    sources:
+      - []
+    s: http://$()
+    po:
+      - [a, class]
+      - p: predicate
+        o:
+          - mapping: triplesmap2
+            condition:
+              function: equal
+              parameters:
+                - [str1, $()]
+                - [str2, $()]
+"""
 
 ##############################################################################
 #############################   YARRRML CONSTANTS  ###########################
