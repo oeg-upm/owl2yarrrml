@@ -1,10 +1,10 @@
 # Transforming your ontology into YARRRML mappings
 This script generates a YARRRML template from the input ontology. The transformations made are:
 
-| Ontology        | Mapping           
-| ------------- |:-------------:| 
-| Class     | TriplesMap + Simple PredicateObjectMap (rdf:type, class) | 
-| Data Property     | Simple PredicateObjectMap in the TriplesMap corresponding to the class defined in the domain of the property      | 
+| Ontology        |                                                                                                           Mapping                                                                                                           |
+|-----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:| 
+| Class           |                                                                                  TriplesMap + Simple PredicateObjectMap (rdf:type, class)                                                                                   | 
+| Data Property   |                                                        Simple PredicateObjectMap in the TriplesMap corresponding to the class defined in the domain of the property                                                         | 
 | Object Property | Join PredicateObjectMap in the TriplesMap corresponding to the class defined in the domain of the property and where the parentTriplesMap is the TriplesMap corresponding to the class defined in the range of the property | 
 
 ## How to execute it
@@ -13,7 +13,7 @@ This script generates a YARRRML template from the input ontology. The transforma
 The input ontology can be serialized in NTRIPLES, RDF/XML or Turtle
 ```bash
 python3 -m pip install owl2yarrrml
-python3 owl2yarrrml -i paht/ontology.xml -o ouput_path/mapping.yml
+python3 -m owl2yarrrml -i paht/ontology.xml -o ouput_path/mapping.yml
 ```
 
 ### Execution as a library
