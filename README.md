@@ -12,7 +12,7 @@ This script generates a YARRRML template from the input ontology. The transforma
 ### Execution from CLI
 The input ontology can be serialized in NTRIPLES, RDF/XML or Turtle
 ```bash
-python3 -m pip install owl2ready
+python3 -m pip install owl2yarrrml
 python3 owl2yarrrml -i paht/ontology.xml -o ouput_path/mapping.yml
 ```
 
